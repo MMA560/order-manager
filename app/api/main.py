@@ -1,19 +1,26 @@
-from fastapi import FastAPI, HTTPException, status, Depends, Path , Body
+from fastapi import FastAPI, HTTPException, status, Depends, Path, Body
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
+from datetime import datetime
+
+# استيرادات الوحدات المحلية الخاصة بك
 from app.api.tempelate import *
 from app.api.order_schemas import *
 from app.db.database import get_db, Base, enigne
 from app.api.order_services import *
-from datetime import datetime
 
+import logging # <--- تم استيراد وحدة logging
 
-from fastapi import FastAPI
+# إعداد بسيط لـ logging
+# في تطبيق حقيقي، يجب أن يكون لديك إعداد logging أكثر تعقيدًا في ملف منفصل
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__) # <--- الحصول على كائن logger لهذه الوحدة
 
-Base.metadata.create_all(bind = enigne)
+# تهيئة قاعدة البيانات
+Base.metadata.create_all(bind=enigne)
 
 app = FastAPI(
     title="نظام إدارة الطلبات",
@@ -39,7 +46,7 @@ app.add_middleware(
 )
 
 
-# إعدادات الإيميل (استخدم .env في التطبيق الحقيقي)
+# إعدادات الإيميل (استخدم .env في التطبيق الحقيقي لتأمين بيانات الاعتماد)
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 EMAIL_ADDRESS = "zxz01144@gmail.com"
@@ -50,7 +57,10 @@ def root():
     return {"msg":"Welcome to Order App"}
 
 @app.post("/order-app/api/v1/create-order/", status_code=status.HTTP_200_OK)
-def create_order_endpoint(order_data: OrderCreate,to_email : str, db: Session = Depends(get_db)):
+def create_order_endpoint(order_data: OrderCreate, to_email : str, db: Session = Depends(get_db)):
+    # ملاحظة: أخطاء التحقق من صحة Pydantic (التي تسبب 422) تحدث قبل وصول الطلب إلى هنا.
+    # FastAPI يتعامل معها تلقائيًا ويسجلها في الكونسول الخاص بالخادم.
+
     # حفظ الطلب في قاعدة البيانات
     order = create_order(db=db, order_data=order_data)
 
@@ -70,10 +80,11 @@ def create_order_endpoint(order_data: OrderCreate,to_email : str, db: Session = 
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
             server.send_message(msg)
     except Exception as e:
+        # <--- تم إضافة هذا السطر لتسجيل الخطأ في الكونسول الخاص بالـ backend
+        logger.error(f"فشل إرسال البريد الإلكتروني للطلب (ID: {order.order_id if order else 'غير متوفر'}): {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"تم حفظ الطلب ولكن فشل إرسال الإيميل: {str(e)}")
 
     return {"message": "تم إنشاء الطلب وإرسال الإيميل بنجاح"}
-
 
 
 @app.get("/order-app/api/v1/orders/{order_id}", status_code=status.HTTP_200_OK)

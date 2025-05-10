@@ -18,8 +18,8 @@ class OrderBase(BaseModel):
     size: Optional[str] = None
     shipping: Optional[float] = None
     total_cost: float
-    status : str 
-    is_read : bool
+    status : Optional[str]  = "pending" 
+    is_read : Optional[bool] = False
 
 
 class OrderCreate(OrderBase):
