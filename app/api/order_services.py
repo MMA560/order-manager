@@ -3,6 +3,7 @@ from app.db.models import Order
 from app.api.order_schemas import OrderCreate, OrderUpdate
 from typing import List, Optional
 from datetime import datetime
+from sqlalchemy import desc
 
 
 def create_order(db: Session, order_data: OrderCreate) -> Order:
@@ -34,8 +35,7 @@ def get_order_by_id(db: Session, order_id: int) -> Optional[Order]:
 
 
 def get_all_orders(db: Session, skip: int = 0, limit: int = 100) -> List[Order]:
-    return db.query(Order).offset(skip).limit(limit).all()
-
+    return db.query(Order).order_by(desc(Order.created_at)).offset(skip).limit(limit).all() 
 
 def update_order(db: Session, order_id: int, order_update: OrderUpdate) -> Optional[Order]:
     order = get_order_by_id(db, order_id)
@@ -51,6 +51,15 @@ def update_order(db: Session, order_id: int, order_update: OrderUpdate) -> Optio
     return order
 
 
+def make_read(db : Session, order_id : int):
+    order = db.query(Order).filter(Order.order_id == order_id).first()
+    if not order:
+        return False
+    order.is_read = True
+    db.commit()
+    db.refresh(order)
+    return order
+    
 def delete_order(db: Session, order_id: int) -> bool:
     order = get_order_by_id(db, order_id)
     if not order:

@@ -24,3 +24,4 @@ class Order(Base):
     total_cost = Column(Float, index=True)
     status = Column(String(50), default="pending")  # أو قيم مثل: pending, confirmed, shipped, delivered
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_read    = Column(Boolean, default=False)

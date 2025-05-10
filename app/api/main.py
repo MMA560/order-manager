@@ -1,13 +1,13 @@
-from fastapi import FastAPI, HTTPException, status, Depends
+from fastapi import FastAPI, HTTPException, status, Depends, Path , Body
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
 from app.api.tempelate import *
-from app.api.order_schemas import OrderCreate
+from app.api.order_schemas import *
 from app.db.database import get_db, Base, enigne
-from app.api.order_services import create_order as create_order_service
+from app.api.order_services import *
 from datetime import datetime
 
 
@@ -52,7 +52,7 @@ def root():
 @app.post("/order-app/api/v1/create-order/", status_code=status.HTTP_200_OK)
 def create_order_endpoint(order_data: OrderCreate,to_email : str, db: Session = Depends(get_db)):
     # حفظ الطلب في قاعدة البيانات
-    order = create_order_service(db=db, order_data=order_data)
+    order = create_order(db=db, order_data=order_data)
 
     # تحضير محتوى الإيميل
     html_content = generate_order_email_html(order_data)
@@ -73,3 +73,45 @@ def create_order_endpoint(order_data: OrderCreate,to_email : str, db: Session = 
         raise HTTPException(status_code=500, detail=f"تم حفظ الطلب ولكن فشل إرسال الإيميل: {str(e)}")
 
     return {"message": "تم إنشاء الطلب وإرسال الإيميل بنجاح"}
+
+
+
+@app.get("/order-app/api/v1/orders/{order_id}", status_code=status.HTTP_200_OK)
+def get_order(order_id: int = Path(..., description="رقم الطلب"), db: Session = Depends(get_db)):
+    order = get_order_by_id(db, order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="الطلب غير موجود")
+    return order
+
+# جلب كل الطلبات مع إمكانية التصفح (Pagination)
+@app.get("/order-app/api/v1/orders/", status_code=status.HTTP_200_OK)
+def get_orders(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return get_all_orders(db, skip=skip, limit=limit)
+
+# تحديث طلب
+@app.put("/order-app/api/v1/orders/{order_id}", status_code=status.HTTP_200_OK)
+def update_order_endpoint(
+    order_id: int,
+    order_update: OrderUpdate = Body(...),
+    db: Session = Depends(get_db)
+):
+    updated_order = update_order(db, order_id, order_update)
+    if not updated_order:
+        raise HTTPException(status_code=404, detail="الطلب غير موجود")
+    return updated_order
+
+# حذف طلب
+@app.delete("/order-app/api/v1/orders/{order_id}", status_code=status.HTTP_200_OK)
+def delete_order_endpoint(order_id: int, db: Session = Depends(get_db)):
+    success = delete_order(db, order_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="الطلب غير موجود")
+    return {"message": "تم حذف الطلب بنجاح"}
+
+
+@app.put("/order-app/api/v1/orders/{order_id}/read", status_code=status.HTTP_200_OK)
+def mark_order_as_read(order_id: int, db: Session = Depends(get_db)):
+    order = make_read(db, order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="الطلب غير موجود")
+    return order
