@@ -26,3 +26,13 @@ class Order(Base):
     status = Column(String(50), default="pending")  # أو قيم مثل: pending, confirmed, shipped, delivered
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_read    = Column(Boolean, default=False)
+
+
+class Review(Base):
+    __tablename__ = "reviews"
+    
+    review_id    = Column(Integer, primary_key=True, index=True)
+    reviewer_name = Column(String(100))
+    rate         = Column(Integer, nullable=False)
+    comment      = Column(String(1000), nullable = False)
+    created_at   = Column(DateTime, default=datetime.utcnow)

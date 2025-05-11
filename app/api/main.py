@@ -126,3 +126,57 @@ def mark_order_as_read(order_id: int, db: Session = Depends(get_db)):
     if not order:
         raise HTTPException(status_code=404, detail="الطلب غير موجود")
     return order
+
+
+
+
+
+# ------------------ نهاية كود إدارة الطلبات ------------------
+
+from app.api.review_schemas import ReviewCreate, ReviewOut
+from app.db.models import Review
+from typing import List
+
+@app.post("/order-app/api/v1/reviews/", response_model=ReviewOut, status_code=status.HTTP_201_CREATED)
+def create_review(review: ReviewCreate, db: Session = Depends(get_db)):
+    new_review = Review(
+        reviewer_name=review.reviewer_name,
+        rate=review.rate,
+        comment=review.comment
+    )
+    db.add(new_review)
+    db.commit()
+    db.refresh(new_review)
+    return new_review
+
+@app.get("/order-app/api/v1/reviews/", response_model=List[ReviewOut], status_code=status.HTTP_200_OK)
+def get_all_reviews(db: Session = Depends(get_db)):
+    return db.query(Review).all()
+
+@app.get("/order-app/api/v1/reviews/{review_id}", response_model=ReviewOut, status_code=status.HTTP_200_OK)
+def get_review(review_id: int, db: Session = Depends(get_db)):
+    review = db.query(Review).filter(Review.review_id == review_id).first()
+    if not review:
+        raise HTTPException(status_code=404, detail="المراجعة غير موجودة")
+    return review
+
+@app.put("/order-app/api/v1/reviews/{review_id}", response_model=ReviewOut, status_code=status.HTTP_200_OK)
+def update_review(review_id: int, updated_review: ReviewCreate, db: Session = Depends(get_db)):
+    review = db.query(Review).filter(Review.review_id == review_id).first()
+    if not review:
+        raise HTTPException(status_code=404, detail="المراجعة غير موجودة")
+    review.reviewer_name = updated_review.reviewer_name
+    review.rate = updated_review.rate
+    review.comment = updated_review.comment
+    db.commit()
+    db.refresh(review)
+    return review
+
+@app.delete("/order-app/api/v1/reviews/{review_id}", status_code=status.HTTP_200_OK)
+def delete_review(review_id: int, db: Session = Depends(get_db)):
+    review = db.query(Review).filter(Review.review_id == review_id).first()
+    if not review:
+        raise HTTPException(status_code=404, detail="المراجعة غير موجودة")
+    db.delete(review)
+    db.commit()
+    return {"message": "تم حذف المراجعة بنجاح"}
