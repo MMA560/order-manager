@@ -13,6 +13,7 @@ class OrderBase(BaseModel):
     city: str
     notes: Optional[str] = None
     product: str
+    quantity : int = 1
     color: Optional[str] = None
     image_url: Optional[str] = None
     size: Optional[str] = None

@@ -23,6 +23,7 @@ def create_order(db: Session, order_data: OrderCreate) -> Order:
         shipping=order_data.shipping,
         total_cost=order_data.total_cost,
         status=order_data.status,
+        quantity = order_data.quantity
     )
     db.add(new_order)
     db.commit()

@@ -20,6 +20,7 @@ class Order(Base):
     color      = Column(String(100), index=True)
     image_url  = Column(String(1000), index=True, nullable=True)
     size       = Column(String(100), index=True)
+    quantity   = Column(Integer, default=1, nullable=False)
     shipping   = Column(String(100), index=True)
     total_cost = Column(Float, index=True)
     status = Column(String(50), default="pending")  # أو قيم مثل: pending, confirmed, shipped, delivered
