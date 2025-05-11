@@ -136,22 +136,20 @@ def mark_order_as_read(order_id: int, db: Session = Depends(get_db)):
 from app.api.review_schemas import ReviewCreate, ReviewOut
 from app.db.models import Review
 from typing import List
+from app.api.review_services import *
 
 @app.post("/order-app/api/v1/reviews/", response_model=ReviewOut, status_code=status.HTTP_201_CREATED)
 def create_review(review: ReviewCreate, db: Session = Depends(get_db)):
-    new_review = Review(
-        reviewer_name=review.reviewer_name,
-        rate=review.rate,
-        comment=review.comment
-    )
-    db.add(new_review)
-    db.commit()
-    db.refresh(new_review)
-    return new_review
+    try:
+        new_review = create_new_review(review_data=review, db=db)
+    
+        return new_review
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Internal sever error {e}")
 
 @app.get("/order-app/api/v1/reviews/", response_model=List[ReviewOut], status_code=status.HTTP_200_OK)
 def get_all_reviews(db: Session = Depends(get_db)):
-    return db.query(Review).all()
+    return get_reviews_by_product_id(db=db , product_id=1)
 
 @app.get("/order-app/api/v1/reviews/{review_id}", response_model=ReviewOut, status_code=status.HTTP_200_OK)
 def get_review(review_id: int, db: Session = Depends(get_db)):

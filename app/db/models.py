@@ -31,8 +31,9 @@ class Order(Base):
 class Review(Base):
     __tablename__ = "reviews"
     
-    review_id    = Column(Integer, primary_key=True, index=True)
+    review_id     = Column(Integer, primary_key=True, index=True)
+    product_id    = Column(Integer, nullable=False)
     reviewer_name = Column(String(100))
-    rate         = Column(Integer, nullable=False)
-    comment      = Column(String(1000), nullable = False)
-    created_at   = Column(DateTime, default=datetime.utcnow)
+    rate          = Column(Integer, nullable=False)
+    comment       = Column(String(1000), nullable = False)
+    created_at    = Column(DateTime, default=datetime.utcnow)

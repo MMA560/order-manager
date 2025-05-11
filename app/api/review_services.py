@@ -4,11 +4,12 @@ from app.api.review_schemas import ReviewCreate, ReviewOut
 from typing import Optional
 
 
-def create_review(db: Session, review_data: ReviewCreate) -> Review:
+def create_new_review(db: Session, review_data: ReviewCreate) -> Review:
     review = Review(
         reviewer_name=review_data.reviewer_name,
         rate=review_data.rate,
-        comment=review_data.comment
+        comment=review_data.comment,
+        product_id = review_data.product_id
     )
     db.add(review)
     db.commit()
@@ -20,8 +21,8 @@ def get_review(db: Session, review_id: int) -> Review:
     return db.query(Review).filter(Review.review_id == review_id).first()
 
 
-def get_all_reviews(db: Session) -> list[Review]:
-    return db.query(Review).all()
+def get_reviews_by_product_id(db: Session, product_id : int) -> list[Review]:
+    return db.query(Review).filter(Review.product_id == product_id).all()
 
 
 def update_review(db: Session, review_id: int, updated_data: ReviewCreate) -> Optional[Review]:
