@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Float
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Float, UniqueConstraint
 from .database import Base
 from datetime import datetime
 
@@ -37,3 +37,22 @@ class Review(Base):
     rate          = Column(Integer, nullable=False)
     comment       = Column(String(1000), nullable = False)
     created_at    = Column(DateTime, default=datetime.utcnow)
+    
+    
+    
+class ProductInventory(Base):
+    __tablename__ = "product_inventory"
+    
+    product_inventory_id = Column(Integer, primary_key=True, index=True)
+    
+    # product_id هو عمود Integer عادي (بناءً على طلبك بعدم وجود جدول منتجات حالي)
+    product_id = Column(Integer, nullable=False, index=True) 
+    
+    color = Column(String(100), nullable=False, index=True) # اللون
+    size = Column(String(100), nullable=False, index=True)   # المقاس
+    quantity = Column(Integer, nullable=True, default=0) # الكمية المتاحة (تتناقص وتزداد ديناميكياً)
+
+    # ضمان عدم تكرار نفس تركيبة المنتج واللون والمقاس
+    __table_args__ = (
+        UniqueConstraint('product_id', 'color', 'size', name='_product_color_size_uc'),
+    )
