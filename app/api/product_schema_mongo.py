@@ -6,14 +6,14 @@ class Tag(BaseModel):
     id: str
 
     class Config:
-        arbitrary_types_allowed = True
+        from_attributes = True
 
 class AvailableSize(BaseModel):
     value: str
     label: str
 
     class Config:
-        arbitrary_types_allowed = True
+        from_attributes = True
 
 class AvailableColor(BaseModel):
     value: str
@@ -21,21 +21,21 @@ class AvailableColor(BaseModel):
     image: str
 
     class Config:
-        arbitrary_types_allowed = True
+        from_attributes = True
 
 class GalleryImage(BaseModel):
     src: str
     alt: str
 
     class Config:
-        arbitrary_types_allowed = True
+        from_attributes = True
 
 class DetailsSection(BaseModel):
     title: str
     items: List[str]
 
     class Config:
-        arbitrary_types_allowed = True
+        from_attributes = True
 
 class Highlight(BaseModel):
     title: str
@@ -43,7 +43,7 @@ class Highlight(BaseModel):
     iconName: str
 
     class Config:
-        arbitrary_types_allowed = True
+        from_attributes = True
 
 class VideoInfo(BaseModel):
     title: str
@@ -55,14 +55,14 @@ class VideoInfo(BaseModel):
     features: List[str]
 
     class Config:
-        arbitrary_types_allowed = True
+        from_attributes = True
 
 class Faq(BaseModel):
     question: str
     answer: str
 
     class Config:
-        arbitrary_types_allowed = True
+        from_attributes = True
 
 class Product(BaseModel):
     id: int
@@ -85,4 +85,4 @@ class Product(BaseModel):
     inventoryIds: Dict
 
     class Config:
-        arbitrary_types_allowed = True
+        from_attributes = True

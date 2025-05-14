@@ -29,6 +29,6 @@ class ProductInventoryOut(ProductInventoryBase):
     product_inventory_id: int = Field(..., description="المعرف الفريد لبند المخزون في قاعدة البيانات.")
 
     class Config:
-        orm_mode = True # هذا يسمح لـ Pydantic بقراءة البيانات مباشرة من نماذج SQLAlchemy
+        from_attributes = True # هذا يسمح لـ Pydantic بقراءة البيانات مباشرة من نماذج SQLAlchemy
         # orm_mode = True is deprecated in Pydantic v2. Instead, use from_attributes = True
         # from_attributes = True # For Pydantic v2+
