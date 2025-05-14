@@ -330,18 +330,26 @@ async def get_all_products_from_db():
          summary="جلب منتج بواسطة المعرف",
          description="يسترد تفاصيل منتج محدد باستخدام معرفه الفريد.")
 async def get_product_by_id_from_db(product_id: int):
-    product = await get_product_by_id(product_id)
-    if product:
-        return product
-    else :
-        return {"msg" : "Product not found"}
+    try:
+    
+        product = await get_product_by_id(product_id)
+        if product:
+            return product
+        else :
+            return {"msg" : "Product not found"}
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
 
 
 @app.post("/order-app/api/v1/products/", response_model=Product, status_code=status.HTTP_201_CREATED,
           summary="إنشاء منتج جديد",
           description="يضيف منتج جديد إلى قاعدة البيانات.")
 async def create_product_in_db(product: Product):
-    return await add_product(product)
+    try:
+        return await add_product(product)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
+
 
 
 @app.put("/order-app/api/v1/products/{product_id}", response_model=Product, status_code=status.HTTP_200_OK,
