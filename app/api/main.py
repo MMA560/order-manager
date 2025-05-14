@@ -17,6 +17,9 @@ from app.api.order_services import *
 
 # NEW IMPORTS FOR INVENTORY
 from app.db.models import ProductInventory # Assuming ProductInventory model is here
+# NEW IMPORTS FOR PRODUCTS
+from app.api.products_services import *
+from app.api.product_schema_mongo import *
 
 import logging
 
@@ -309,3 +312,47 @@ def delete_inventory_item(
         db.rollback()
         logger.error(f"خطأ عند حذف بند المخزون {item_id}: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"خطأ في قاعدة البيانات: {e}")
+
+
+
+
+#------------------------ Products Endpoints by mongoDB------------------------
+
+
+@app.get("/order-app/api/v1/products", response_model=List[Product], status_code=status.HTTP_200_OK,
+         summary="جلب كل المنتجات",
+         description="يسترد قائمة بكل المنتجات في قاعدة البيانات.")
+async def get_all_products_from_db():
+    return await get_all_products()
+
+
+@app.get("/order-app/api/v1/products/", response_model=Product, status_code=status.HTTP_200_OK,
+         summary="جلب منتج بواسطة المعرف",
+         description="يسترد تفاصيل منتج محدد باستخدام معرفه الفريد.")
+async def get_product_by_id_from_db(product_id: int):
+    product = await get_product_by_id(product_id)
+    if product:
+        return product
+    else :
+        return {"msg" : "Product not found"}
+
+
+@app.post("/order-app/api/v1/products/", response_model=Product, status_code=status.HTTP_201_CREATED,
+          summary="إنشاء منتج جديد",
+          description="يضيف منتج جديد إلى قاعدة البيانات.")
+async def create_product_in_db(product: Product):
+    return await add_product(product)
+
+
+@app.put("/order-app/api/v1/products/{product_id}", response_model=Product, status_code=status.HTTP_200_OK,
+          summary="تحديث منتج",
+          description="يقوم بتحديث تفاصيل منتج محدد باستخدام معرفه الفريد.")
+async def update_product_in_db(product_id: int, product: Product):
+    return await update_product(product_id, product)
+
+
+@app.delete("/order-app/api/v1/products/{product_id}", status_code=status.HTTP_200_OK,
+             summary="حذف منتج",
+             description="يقوم بحذف منتج محدد من قاعدة البيانات.")
+async def delete_product_in_db(product_id: int):
+    return await delete_product(product_id)
