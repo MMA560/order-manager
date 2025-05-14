@@ -1,11 +1,26 @@
-from motor.motor_asyncio import AsyncIOMotorClient
-from motor.motor_asyncio import AsyncIOMotorDatabase
-from motor.motor_asyncio import AsyncIOMotorCollection
+# db/mongo_db_sync.py
+from pymongo import MongoClient
+from pymongo.database import Database
+from pymongo.collection import Collection
+import os # لإدارة سلسلة الاتصال كمتغير بيئة (موصى به)
 
-client = AsyncIOMotorClient(
-    "mongodb+srv://mma320:zHcJYVCcKoI5kRYh@cluster0.njoseeb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
-    tls=True,
-    tlsAllowInvalidCertificates=True  # في حال كانت الشهادات غير صالحة
-)
-db = client["my_products"]  # اسم قاعدة البيانات التي تريد استخدامها
-products_collection = db["products"]  # الـ Collection لحفظ المنتجات
+# استخدم متغير بيئة لسلسلة الاتصال
+# تأكد من تعيين متغير بيئة باسم MONGODB_URI في Vercel
+MONGO_URI = os.environ.get("MONGODB_URI", "mongodb+srv://mma320:zHcJYVCcKoI5kRYh@cluster0.njoseeb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+
+# قم بتهيئة العميل في المستوى العلوي.
+# PyMongo يدير تجميع الاتصالات وإعادة الاتصال تلقائيًا.
+try:
+    client: MongoClient = MongoClient(MONGO_URI)
+    # اختياري: قم بعملية بسيطة للتحقق من الاتصال عند البدء
+    client.admin.command('ping')
+    print("MongoDB connection successful!")
+except Exception as e:
+    print(f"Could not connect to MongoDB: {e}")
+    # قد تحتاج إلى التعامل مع هذا الخطأ بشكل أفضل في بيئة الإنتاج
+
+# احصل على قاعدة البيانات والـ collection
+db: Database = client["my_products"]
+products_collection: Collection = db["products"]
+
+# لا تحتاج إلى إغلاق العميل هنا صراحةً؛ دعه مفتوحًا لإعادة استخدامه في الـ Warm Starts

@@ -314,31 +314,42 @@ def delete_inventory_item(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"خطأ في قاعدة البيانات: {e}")
 
 
-
-
 #------------------------ Products Endpoints by mongoDB------------------------
+import asyncio # لاستخدام run_in_executor
+from concurrent.futures import ThreadPoolExecutor # أو ProcessPoolExecutor
 
 
 @app.get("/order-app/api/v1/products", response_model=List[Product], status_code=status.HTTP_200_OK,
-         summary="جلب كل المنتجات",
-         description="يسترد قائمة بكل المنتجات في قاعدة البيانات.")
+          summary="جلب كل المنتجات",
+          description="يسترد قائمة بكل المنتجات في قاعدة البيانات.")
 async def get_all_products_from_db():
-    return await get_all_products()
+    # استخدام run_in_executor لتشغيل الدالة المتزامنة في خلفية
+    # None يعني استخدام الـ executor الافتراضي لـ asyncio (عادةً ThreadPoolExecutor)
+    return await asyncio.get_event_loop().run_in_executor(None, get_all_products_sync)
 
+
+# ملاحظة: في Endpoint get_product_by_id_from_db، كان هناك مسار يرجع 200 مع {"msg": "Product not found"}.
+# هذا ليس من أفضل الممارسات RESTful. إذا لم يتم العثور على مورد، يجب إرجاع 404 Not Found.
+# سأقوم بتعديل ذلك هنا.
 
 @app.get("/order-app/api/v1/products/", response_model=Product, status_code=status.HTTP_200_OK,
-         summary="جلب منتج بواسطة المعرف",
-         description="يسترد تفاصيل منتج محدد باستخدام معرفه الفريد.")
+          summary="جلب منتج بواسطة المعرف",
+          description="يسترد تفاصيل منتج محدد باستخدام معرفه الفريد.")
 async def get_product_by_id_from_db(product_id: int):
     try:
-    
-        product = await get_product_by_id(product_id)
+        # تشغيل الدالة المتزامنة في خلفية
+        product = await asyncio.get_event_loop().run_in_executor(None, get_product_by_id_sync, product_id)
+
         if product:
             return product
-        else :
-            return {"msg" : "Product not found"}
+        else:
+            # رفع استثناء 404 Not Found إذا لم يتم العثور على المنتج
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
+        # معالجة الاستثناءات الأخرى غير المتوقعة
+        # log the exception e here for debugging
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An error occurred: {e}")
 
 
 @app.post("/order-app/api/v1/products/", response_model=Product, status_code=status.HTTP_201_CREATED,
@@ -346,21 +357,35 @@ async def get_product_by_id_from_db(product_id: int):
           description="يضيف منتج جديد إلى قاعدة البيانات.")
 async def create_product_in_db(product: Product):
     try:
-        return await add_product(product)
+        # تشغيل الدالة المتزامنة في خلفية
+        # ملاحظة: تأكد أن الـ product_id يتم تعيينه في الـ schema قبل الإدخال إذا كنت تستخدم id رقمي خاص بك.
+        return await asyncio.get_event_loop().run_in_executor(None, add_product_sync, product)
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
-
+        # log the exception e here
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An error occurred: {e}")
 
 
 @app.put("/order-app/api/v1/products/{product_id}", response_model=Product, status_code=status.HTTP_200_OK,
           summary="تحديث منتج",
           description="يقوم بتحديث تفاصيل منتج محدد باستخدام معرفه الفريد.")
 async def update_product_in_db(product_id: int, product: Product):
-    return await update_product(product_id, product)
+    # تشغيل الدالة المتزامنة في خلفية
+    updated_product = await asyncio.get_event_loop().run_in_executor(None, update_product_sync, product_id, product)
+    if updated_product:
+         return updated_product
+    else:
+         # إذا لم يتم العثور على المنتج للتحديث
+         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Product with id {product_id} not found or not updated")
 
 
 @app.delete("/order-app/api/v1/products/{product_id}", status_code=status.HTTP_200_OK,
-             summary="حذف منتج",
-             description="يقوم بحذف منتج محدد من قاعدة البيانات.")
+            summary="حذف منتج",
+            description="يقوم بحذف منتج محدد من قاعدة البيانات.")
 async def delete_product_in_db(product_id: int):
-    return await delete_product(product_id)
+    # تشغيل الدالة المتزامنة في خلفية
+    deleted = await asyncio.get_event_loop().run_in_executor(None, delete_product_sync, product_id)
+    if deleted:
+        return {"detail": "Product deleted successfully"}
+    else:
+        # إذا لم يتم العثور على المنتج للحذف
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Product with id {product_id} not found")
