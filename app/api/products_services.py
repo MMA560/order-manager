@@ -1,54 +1,45 @@
-# api/products_services_sync.py
-# استيراد الـ collection المتزامنة
-from app.db.mongo_db import products_collection
-# استيراد الـ Schema الخاص بك
+from app.db.firestore_db_async import products_collection
 from app.api.product_schema_mongo import Product
-from typing import List
+from typing import List, Optional
 
-# الدوال أصبحت متزامنة (لا يوجد async أو await بداخلها لعمليات DB)
+# Get all products
+async def get_all_products() -> List[Product]:
+    docs = products_collection.stream()
+    result = []
+    async for doc in docs:
+        data = doc.to_dict()
+        result.append(Product(**data))
+    return result
 
-def get_all_products_sync() -> List[Product]:
-    # .find() هنا يرجع cursor متزامن، نستخدم list() لتحويله
-    products = list(products_collection.find().limit(1000))
-    result_list = []
-    for product_dict in products:
-        # تأكد من التعامل مع _id إذا كان موجودًا ولا تريده في الـ response
-        # أو قم بتحويل ObjectId إلى str إذا كان الـ Schema يتوقعه كذلك
-        # بما أنك تستخدم 'id' رقمي في الاستعلامات، سأفترض أن _id يتم تجاهله هنا
-        product_dict.pop("_id", None)
-        result_list.append(Product(**product_dict))
-    return result_list
+# Get product by ID
+async def get_product_by_id(product_id: int) -> Optional[Product]:
+    query = products_collection.where("id", "==", product_id).limit(1)
+    docs = query.stream()
+    async for doc in docs:
+        return Product(**doc.to_dict())
+    return None
 
-def get_product_by_id_sync(product_id: int) -> Product | None:
-    # find_one() هنا عملية متزامنة وتحظر حتى يتم جلب النتيجة
-    product_dict = products_collection.find_one({"id": product_id})
-    if product_dict:
-        product_dict.pop("_id", None)
-        return Product(**product_dict)
-    return None # إرجاع None إذا لم يتم العثور على المنتج
-
-def add_product_sync(product: Product) -> Product:
-    # insert_one() هنا عملية متزامنة
+# Add product
+async def add_product(product: Product) -> Product:
     product_dict = product.dict()
-    # إذا كنت تستخدم id رقمي خاص بك، تأكد من وجوده في product_dict قبل الإدخال
-    # لا تستخدم result.inserted_id لتعيين الـ id الرقمي، لأنه ObjectId
-    result = products_collection.insert_one(product_dict)
-    # يمكنك إرجاع الـ product الذي تم إدخاله كما هو، أو جلبه مرة أخرى إذا احتجت لـ _id
-    # بما أن الـ schema هو Product الذي يتوقع id رقمي، سنرجع الـ dict الأصلي
-    return Product(**product_dict)
+    await products_collection.add(product_dict)
+    return product
 
+# Update product by ID
+async def update_product(product_id: int, product: Product) -> Optional[Product]:
+    query = products_collection.where("id", "==", product_id).limit(1)
+    docs = query.stream()
+    async for doc in docs:
+        await doc.reference.update(product.dict(exclude_unset=True))
+        updated_data = await doc.reference.get()
+        return Product(**updated_data.to_dict())
+    return None
 
-def update_product_sync(product_id: int, product: Product) -> Product | None:
-    product_dict = product.dict(exclude_unset=True)
-    # update_one() عملية متزامنة
-    result = products_collection.update_one({"id": product_id}, {"$set": product_dict})
-    if result.matched_count:
-        # إذا تم التحديث، نرجع البيانات المحدثة (يمكنك جلبها مرة أخرى للتأكد التام)
-        # بما أنك تقوم بإرجاع Product(**product_dict)، هذا يعني أن الـ dict يحتوي على التحديثات
-        return Product(**product_dict)
-    return None # إرجاع None إذا لم يتم العثور على المستند للمطابقة
-
-def delete_product_sync(product_id: int) -> bool:
-    # delete_one() عملية متزامنة
-    result = products_collection.delete_one({"id": product_id})
-    return result.deleted_count > 0
+# Delete product by ID
+async def delete_product(product_id: int) -> bool:
+    query = products_collection.where("id", "==", product_id).limit(1)
+    docs = query.stream()
+    async for doc in docs:
+        await doc.reference.delete()
+        return True
+    return False
