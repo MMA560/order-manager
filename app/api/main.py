@@ -21,12 +21,34 @@ from app.db.models import ProductInventory # Assuming ProductInventory model is 
 from app.api.products_services import *
 from app.api.product_schema_mongo import *
 
+import os # **جديد:** استيراد مكتبة os للتعامل مع متغيرات البيئة
+import firebase_admin
+from firebase_admin import credentials, messaging
+
 import logging
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+
+#------------------------ intialize fire-base -----------------
+try:
+    # إذا كان متغير البيئة GOOGLE_APPLICATION_CREDENTIALS مُعيناً،
+    # فإن initialize_app ستجده تلقائياً.
+    # لا نحتاج لتمرير credentials.Certificate() صراحةً هنا.
+    firebase_admin.initialize_app()
+    logger.info("Firebase Admin SDK initialized successfully using GOOGLE_APPLICATION_CREDENTIALS.")
+except Exception as e:
+    logger.error(f"Failed to initialize Firebase Admin SDK: {e}", exc_info=True)
+    # هنا يمكنك التحقق ما إذا كان الخطأ بسبب عدم تعيين المتغير أو عدم صحة المسار فيه
+    if "GOOGLE_APPLICATION_CREDENTIALS" not in os.environ:
+         logger.error("Environment variable GOOGLE_APPLICATION_CREDENTIALS is not set.")
+    # في بيئة الإنتاج، قد ترغب في إنهاء التطبيق إذا فشلت التهيئة هنا
+    # exit(1) # مثال على الإنهاء القسري
+# ---------------------- End of firbae -------------------------
 
 # إعداد بسيط لـ logging
 # في تطبيق حقيقي، يجب أن يكون لديك إعداد logging أكثر تعقيدًا في ملف منفصل
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
 
 # تهيئة قاعدة البيانات
 Base.metadata.create_all(bind=enigne) # Corrected typo: enigne to engine
@@ -71,7 +93,15 @@ def create_order_endpoint(order_data: OrderCreate, to_email : str, db: Session =
     # FastAPI يتعامل معها تلقائيًا ويسجلها في الكونسول الخاص بالخادم.
 
     # حفظ الطلب في قاعدة البيانات
-    order = create_order(db=db, order_data=order_data)
+    try:
+        order = create_order(db=db, order_data=order_data)
+        print(1)
+        logger.info(f"تم حفظ الطلب")
+
+    except Exception as e:
+        logger.error(f"خطأ في حفظ الطلب: {e}", exc_info=True)
+
+        
 
     # تحضير محتوى الإيميل
     html_content = generate_order_email_html(order_data)
@@ -91,7 +121,35 @@ def create_order_endpoint(order_data: OrderCreate, to_email : str, db: Session =
     except Exception as e:
         # <--- تم إضافة هذا السطر لتسجيل الخطأ في الكونسول الخاص بالـ backend
         logger.error(f"فشل إرسال البريد الإلكتروني للطلب (ID: {order.order_id if order else 'غير متوفر'}): {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"تم حفظ الطلب ولكن فشل إرسال الإيميل: {str(e)}")
+        pass
+    
+    try:
+        tokens_db: List[TokenOut] = get_all_push_tokens(db)
+        valid_tokens = [token.fcm_token for token in tokens_db if token.fcm_token]
+
+        if not valid_tokens:
+            logger.info(f"لا توجد أجهزة مسجلة للإشعارات للطلب (ID: {order.order_id}). تم تخطي إرسال الإشعار.")
+        else:
+            for fcm_token in valid_tokens:
+                try:
+                    message = messaging.Message(
+                        notification=messaging.Notification(
+                            title="New Order!",
+                            body=f"From: {order_data.name} - No. {str(order.order_id)}",
+                        ),
+                        data={
+                            "order_id": str(order.order_id),
+                            "action": "view_order",
+                        },
+                        token=fcm_token
+                    )
+                    response = messaging.send(message)
+                    logger.info(f"تم إرسال إشعار إلى الجهاز {fcm_token} بنجاح للطلب (ID: {order.order_id}).")
+                except Exception as inner_e:
+                    logger.warning(f"فشل إرسال إشعار إلى {fcm_token} بسبب: {inner_e}")
+    except Exception as e:
+        logger.error(f"خطأ عام أثناء عملية إرسال إشعار للطلب (ID: {order.order_id}): {e}", exc_info=True)
+
 
     return {"message": "تم إنشاء الطلب وإرسال الإيميل بنجاح"}
 
@@ -316,7 +374,7 @@ def delete_inventory_item(
 
 from app.api import products_services as service
 from app.api.product_schema_mongo import Product
-
+ 
 
 # Get all products
 @app.get("/order-app/api/v1/products", response_model=List[Product], status_code=status.HTTP_200_OK,
@@ -364,3 +422,24 @@ async def delete_product_in_db(product_id: int):
     if deleted:
         return {"detail": "Product deleted successfully"}
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Product with id {product_id} not found")
+
+
+
+
+#------------------ Tokens End Points --------------------
+from app.api.token_services import *
+from app.api.token_schemas import *
+
+
+
+@app.post("/push-tokens", response_model=TokenOut)
+def create_push_token_endpoint(token_data: PushTokenCreate, db: Session = Depends(get_db)):
+    saved_token = create_push_token(db, token_data)
+    if not saved_token:
+        raise HTTPException(status_code=400, detail="Failed to save token")
+    return saved_token
+
+@app.get("/push-tokens", response_model=List[TokenOut])
+def read_push_tokens(db: Session = Depends(get_db)):
+    tokens = get_all_push_tokens(db)
+    return tokens

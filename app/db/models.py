@@ -56,3 +56,11 @@ class ProductInventory(Base):
     __table_args__ = (
         UniqueConstraint('product_id', 'color', 'size', name='_product_color_size_uc'),
     )
+    
+    
+    
+class PushToken(Base):
+    __tablename__ = "push_tokens"
+
+    token_id = Column(Integer, primary_key=True, index=True)
+    fcm_token = Column(String, unique=True, index=True)
