@@ -1,6 +1,4 @@
-# app/api/products_services.py
-
-from app.db.firestore_db_async import products_collection
+from app.db.firestore_db_async import get_products_collection
 from app.api.product_schema_mongo import Product
 from google.cloud.firestore import FieldFilter
 from typing import List, Optional
@@ -8,6 +6,8 @@ from typing import List, Optional
 async def get_all_products() -> List[Product]:
     try:
         products = []
+        # الحصول على مجموعة المنتجات لكل طلب
+        products_collection = get_products_collection()
         async for doc in products_collection.stream():
             data = doc.to_dict()
             products.append(Product(**data))
@@ -18,6 +18,8 @@ async def get_all_products() -> List[Product]:
 
 async def get_product_by_id(product_id: int) -> Optional[Product]:
     try:
+        # الحصول على مجموعة المنتجات لكل طلب
+        products_collection = get_products_collection()
         query = products_collection.where(filter=FieldFilter("id", "==", product_id)).limit(1)
         async for doc in query.stream():
             return Product(**doc.to_dict())
@@ -28,6 +30,8 @@ async def get_product_by_id(product_id: int) -> Optional[Product]:
 
 async def add_product(product: Product) -> Product:
     try:
+        # الحصول على مجموعة المنتجات لكل طلب
+        products_collection = get_products_collection()
         product_dict = product.dict()
         await products_collection.add(product_dict)
         return product
@@ -37,12 +41,21 @@ async def add_product(product: Product) -> Product:
 
 async def update_product(product_id: int, product: Product) -> Optional[Product]:
     try:
+        # الحصول على مجموعة المنتجات لكل طلب
+        products_collection = get_products_collection()
         query = products_collection.where(filter=FieldFilter("id", "==", product_id)).limit(1)
+        product_data = None
+        doc_ref = None
+        
         async for doc in query.stream():
             # استخدم product.model_dump(exclude_unset=True) إذا كنت تستخدم Pydantic V2+
-            await doc.reference.update(product.dict(exclude_unset=True))
-            updated_data = await doc.reference.get()
-            return Product(**updated_data.to_dict())
+            product_dict = product.dict(exclude_unset=True)
+            doc_ref = doc.reference
+            await doc_ref.update(product_dict)
+            
+        if doc_ref:
+            doc_snapshot = await doc_ref.get()
+            return Product(**doc_snapshot.to_dict())
         return None
     except Exception as e:
         print(f"Error in update_product for ID {product_id}: {e}")
@@ -50,11 +63,16 @@ async def update_product(product_id: int, product: Product) -> Optional[Product]
 
 async def delete_product(product_id: int) -> bool:
     try:
+        # الحصول على مجموعة المنتجات لكل طلب
+        products_collection = get_products_collection()
         query = products_collection.where(filter=FieldFilter("id", "==", product_id)).limit(1)
+        deleted = False
+        
         async for doc in query.stream():
             await doc.reference.delete()
-            return True
-        return False
+            deleted = True
+            
+        return deleted
     except Exception as e:
         print(f"Error in delete_product for ID {product_id}: {e}")
         raise

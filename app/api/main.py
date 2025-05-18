@@ -314,16 +314,12 @@ def delete_inventory_item(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"خطأ في قاعدة البيانات: {e}")
 
 
-from app.api import products_services as service
-from app.api.product_schema_mongo import Product
-
-
 @app.get("/order-app/api/v1/products", response_model=List[Product], status_code=status.HTTP_200_OK,
          summary="جلب كل المنتجات",
          description="يسترد قائمة بكل المنتجات في قاعدة البيانات.")
 async def get_all_products_from_db():
     try:
-        return await service.get_all_products()
+        return await get_all_products()
     except Exception as e:
         error_detail = f"حدث خطأ أثناء جلب جميع المنتجات من قاعدة البيانات: {str(e)}"
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
@@ -333,7 +329,7 @@ async def get_all_products_from_db():
          description="يسترد تفاصيل منتج محدد باستخدام معرفه الفريد.")
 async def get_product_by_id_from_db(product_id: int):
     try:
-        product = await service.get_product_by_id(product_id)
+        product = await get_product_by_id(product_id)
         if product:
             return product
         else:
@@ -347,7 +343,7 @@ async def get_product_by_id_from_db(product_id: int):
           description="يضيف منتج جديد إلى قاعدة البيانات.")
 async def create_product_in_db(product: Product):
     try:
-        return await service.add_product(product)
+        return await add_product(product)
     except Exception as e:
         error_detail = f"حدث خطأ أثناء إنشاء منتج جديد في قاعدة البيانات: {str(e)}"
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
@@ -357,7 +353,7 @@ async def create_product_in_db(product: Product):
          description="يقوم بتحديث تفاصيل منتج محدد باستخدام معرفه الفريد.")
 async def update_product_in_db(product_id: int, product: Product):
     try:
-        updated_product = await service.update_product(product_id, product)
+        updated_product = await update_product(product_id, product)
         if updated_product:
             return updated_product
         else:
@@ -371,7 +367,7 @@ async def update_product_in_db(product_id: int, product: Product):
             description="يقوم بحذف منتج محدد من قاعدة البيانات.")
 async def delete_product_in_db(product_id: int):
     try:
-        deleted = await service.delete_product(product_id)
+        deleted = await delete_product(product_id)
         if deleted:
             return {"detail": f"تم حذف المنتج ذو المعرف {product_id} بنجاح."}
         else:
