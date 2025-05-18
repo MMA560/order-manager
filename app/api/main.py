@@ -318,49 +318,64 @@ from app.api import products_services as service
 from app.api.product_schema_mongo import Product
 
 
-# Get all products
 @app.get("/order-app/api/v1/products", response_model=List[Product], status_code=status.HTTP_200_OK,
-            summary="جلب كل المنتجات",
-            description="يسترد قائمة بكل المنتجات في قاعدة البيانات.")
+         summary="جلب كل المنتجات",
+         description="يسترد قائمة بكل المنتجات في قاعدة البيانات.")
 async def get_all_products_from_db():
-    return await service.get_all_products()
+    try:
+        return await service.get_all_products()
+    except Exception as e:
+        error_detail = f"حدث خطأ أثناء جلب جميع المنتجات من قاعدة البيانات: {str(e)}"
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
 
-# Get product by ID
 @app.get("/order-app/api/v1/products/{product_id}", response_model=Product, status_code=status.HTTP_200_OK,
-            summary="جلب منتج بواسطة المعرف",
-            description="يسترد تفاصيل منتج محدد باستخدام معرفه الفريد.")
+         summary="جلب منتج بواسطة المعرف",
+         description="يسترد تفاصيل منتج محدد باستخدام معرفه الفريد.")
 async def get_product_by_id_from_db(product_id: int):
-    product = await service.get_product_by_id(product_id)
-    if product:
-        return product
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+    try:
+        product = await service.get_product_by_id(product_id)
+        if product:
+            return product
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"المنتج ذو المعرف {product_id} غير موجود.")
+    except Exception as e:
+        error_detail = f"حدث خطأ أثناء جلب المنتج ذو المعرف {product_id} من قاعدة البيانات: {str(e)}"
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
 
-# Create new product
 @app.post("/order-app/api/v1/products/", response_model=Product, status_code=status.HTTP_201_CREATED,
-             summary="إنشاء منتج جديد",
-             description="يضيف منتج جديد إلى قاعدة البيانات.")
+          summary="إنشاء منتج جديد",
+          description="يضيف منتج جديد إلى قاعدة البيانات.")
 async def create_product_in_db(product: Product):
     try:
         return await service.add_product(product)
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An error occurred: {e}")
+        error_detail = f"حدث خطأ أثناء إنشاء منتج جديد في قاعدة البيانات: {str(e)}"
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
 
-# Update product
 @app.put("/order-app/api/v1/products/{product_id}", response_model=Product, status_code=status.HTTP_200_OK,
-            summary="تحديث منتج",
-            description="يقوم بتحديث تفاصيل منتج محدد باستخدام معرفه الفريد.")
+         summary="تحديث منتج",
+         description="يقوم بتحديث تفاصيل منتج محدد باستخدام معرفه الفريد.")
 async def update_product_in_db(product_id: int, product: Product):
-    updated_product = await service.update_product(product_id, product)
-    if updated_product:
-        return updated_product
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Product with id {product_id} not found or not updated")
+    try:
+        updated_product = await service.update_product(product_id, product)
+        if updated_product:
+            return updated_product
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"المنتج ذو المعرف {product_id} غير موجود أو لم يتم تحديثه.")
+    except Exception as e:
+        error_detail = f"حدث خطأ أثناء تحديث المنتج ذو المعرف {product_id} في قاعدة البيانات: {str(e)}"
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
 
-# Delete product
 @app.delete("/order-app/api/v1/products/{product_id}", status_code=status.HTTP_200_OK,
-               summary="حذف منتج",
-               description="يقوم بحذف منتج محدد من قاعدة البيانات.")
+            summary="حذف منتج",
+            description="يقوم بحذف منتج محدد من قاعدة البيانات.")
 async def delete_product_in_db(product_id: int):
-    deleted = await service.delete_product(product_id)
-    if deleted:
-        return {"detail": "Product deleted successfully"}
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Product with id {product_id} not found")
+    try:
+        deleted = await service.delete_product(product_id)
+        if deleted:
+            return {"detail": f"تم حذف المنتج ذو المعرف {product_id} بنجاح."}
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"المنتج ذو المعرف {product_id} غير موجود.")
+    except Exception as e:
+        error_detail = f"حدث خطأ أثناء حذف المنتج ذو المعرف {product_id} من قاعدة البيانات: {str(e)}"
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
