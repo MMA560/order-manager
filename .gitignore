@@ -1,2 +1,21 @@
+# Ignore environment variables file
 .env
+
+# Ignore the service account key file
 firebase/serviceAccountKey.json
+
+# You might also want to ignore Python bytecode files
+__pycache__/
+
+# Ignore virtual environment directory
+venv/
+.venv/
+
+# Ignore editor specific files
+.vscode/
+.idea/
+
+# Ignore build artifacts
+*.pyc
+*.dist-info/
+*.egg-info/
