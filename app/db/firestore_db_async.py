@@ -63,7 +63,7 @@ db = firestore.AsyncClient(credentials=credentials, project=project_id)
 # تحديد الـ collection الخاص بالمنتجات (يمكن تعريف collections أخرى هنا أيضاً)
 products_collection = db.collection("products")
 
-print("Firestore client initialized successfully.")
+print("Firestore client initialized successfully (module level).")
 
 # ملاحظة: يمكنك الآن استيراد 'db' أو 'products_collection' من هذا الملف
 # في ملفات أخرى في مشروعك (مثل app/api/products_services.py)
