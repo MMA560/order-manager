@@ -314,7 +314,7 @@ def delete_inventory_item(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"خطأ في قاعدة البيانات: {e}")
 
 
-@app.get("/order-app/api/v1/products", response_model=List[Product], status_code=status.HTTP_200_OK,
+@app.get("/order-app/api/v1/products", response_model=List[ProductOut], status_code=status.HTTP_200_OK,
          summary="جلب كل المنتجات",
          description="يسترد قائمة بكل المنتجات في قاعدة البيانات.")
 async def get_all_products_from_db():

@@ -1,17 +1,20 @@
 from app.db.firestore_db_async import get_products_collection
-from app.api.product_schema_mongo import Product
+from app.api.product_schema_mongo import *
 from google.cloud.firestore import FieldFilter
 from typing import List, Optional
 
-async def get_all_products() -> List[Product]:
+async def get_all_products() -> List[ProductOut]:
     try:
-        products = []
-        # الحصول على مجموعة المنتجات لكل طلب
+        simplified_products = []
         products_collection = get_products_collection()
+
         async for doc in products_collection.stream():
             data = doc.to_dict()
-            products.append(Product(**data))
-        return products
+            product = Product(**data)
+            simplified_dict = simplify_product_for_card(product.dict())
+            simplified_products.append(ProductOut(**simplified_dict))
+
+        return simplified_products
     except Exception as e:
         print(f"Error in get_all_products: {e}")
         raise
@@ -76,3 +79,41 @@ async def delete_product(product_id: int) -> bool:
     except Exception as e:
         print(f"Error in delete_product for ID {product_id}: {e}")
         raise
+    
+    
+    
+    
+    
+    
+    
+#=======================================================================
+
+def simplify_product_for_card(product: dict) -> dict:
+    """
+    تبسيط كائن المنتج لكرت العرض:
+    - mainImage: أول صورة لأول لون من المعرض.
+    - tags: قائمة مختصرة فقط بـ id.
+    - لا يتم إرجاع الحقول: availableColors, availableSizes, galleryImages
+    """
+    simplified = {
+        "id": product.get("id"),
+        "name": product.get("name"),
+        "description": product.get("description"),
+        "price": product.get("price"),
+        "oldPrice": product.get("oldPrice"),
+        "discount": product.get("discount"),
+        "tags": [{"id": tag.get("id")} for tag in product.get("tags", []) if tag and tag.get("id")],
+        "mainImage": None
+    }
+
+    # استخراج أول صورة من أول لون
+    available_colors = product.get("availableColors", [])
+    gallery_images = product.get("galleryImages", {})
+
+    if available_colors:
+        first_color_value = available_colors[0].get("value")
+        images_for_color = gallery_images.get(first_color_value)
+        if images_for_color and len(images_for_color) > 0:
+            simplified["mainImage"] = images_for_color[0].get("src")
+
+    return simplified

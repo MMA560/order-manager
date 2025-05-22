@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 class Tag(BaseModel):
     name: str
@@ -83,6 +83,27 @@ class Product(BaseModel):
     faqs: List[Faq]
     inventory: Dict
     inventoryIds: Dict
+
+    class Config:
+        from_attributes = True
+        
+
+class TagOut(BaseModel):
+    id: str
+
+    class Config:
+        from_attributes = True
+
+# ✅ نسخة مبسطة جداً مع mainImage يحتوي على أول صورة فقط
+class ProductOut(BaseModel):
+    id: int
+    name: str
+    description: str
+    price: float
+    oldPrice: Optional[float] = None
+    discount: Optional[int] = None
+    tags: Optional[List[TagOut]] = []
+    mainImage: Optional[str] = None  # أول صورة لأول لون في المعرض
 
     class Config:
         from_attributes = True
