@@ -2,6 +2,8 @@ from app.db.firestore_db_async import get_products_collection
 from app.api.product_schema_mongo import *
 from google.cloud.firestore import FieldFilter
 from typing import List, Optional
+from app.api.favorite_services import get_user_favorites
+from sqlalchemy.orm import Session
 
 async def get_all_products() -> List[ProductOut]:
     try:
@@ -79,12 +81,42 @@ async def delete_product(product_id: int) -> bool:
     except Exception as e:
         print(f"Error in delete_product for ID {product_id}: {e}")
         raise
+
+
+async def get_favorite_products_for_user(db: Session, user_identifier: str) -> List[ProductOut]:
+    """
+    يجلب جميع المنتجات المفضلة لمستخدم معين باستخدام دالة get_user_favorites
+    ثم يسترد تفاصيلها المبسطة من Firestore.
+
+    Args:
+        db: جلسة قاعدة البيانات SQLAlchemy.
+        user_identifier: معرف المستخدم (من الكوكي).
+
+    Returns:
+        قائمة بكائنات ProductOut تمثل المنتجات المفضلة للمستخدم مع تفاصيلها المبسطة من Firestore.
+    """
+    favorite_records = get_user_favorites(db=db, user_identifier=user_identifier)
+
+    if not favorite_records:
+        return []  # لا يوجد منتجات مفضلة لهذا المستخدم
+
+    product_ids_list = [record.product_id for record in favorite_records]
+    simplified_favorite_products = []
+    products_collection = get_products_collection()
+
+    # يمكنك تحسين هذا الاستعلام إذا كانت Firestore تدعم الاستعلام عن مجموعة من IDs بكفاءة
+    for product_id in product_ids_list:
+        query = products_collection.where(filter=FieldFilter("id", "==", product_id)).limit(1)
+        async for doc in query.stream():
+            data = doc.to_dict()
+            product = Product(**data)
+            simplified_dict = simplify_product_for_card(product.dict())
+            simplified_favorite_products.append(ProductOut(**simplified_dict))
+            break  # بما أننا نحد الاستعلام بـ 1، يمكننا الخروج بعد العثور على المنتج
+
+    return simplified_favorite_products
     
-    
-    
-    
-    
-    
+   
     
 #=======================================================================
 

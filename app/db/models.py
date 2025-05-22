@@ -56,3 +56,17 @@ class ProductInventory(Base):
     __table_args__ = (
         UniqueConstraint('product_id', 'color', 'size', name='_product_color_size_uc'),
     )
+    
+    
+    
+class Favorite(Base):
+    __tablename__ = "favorites"
+
+    favorite_id = Column(Integer, primary_key=True, index=True)
+    user_identifier = Column(String(255), nullable=False, index=True)  # معرف العميل (من الكوكي)
+    product_id = Column(Integer, nullable=False, index=True)
+
+    # يمكنك إضافة قيود فريدة لمنع تكرار تفضيل نفس المنتج لنفس المستخدم
+    __table_args__ = (
+        UniqueConstraint('user_identifier', 'product_id', name='_user_product_uc'),
+    )
