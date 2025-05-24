@@ -2,11 +2,11 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 from typing import List
 
-from app.api.favorite_schemas import FavoriteCreate
-from app.api.favorite_services import *
+from app.api.schemas.favorite_schemas import FavoriteCreate
+from app.api.services.favorite_services import *
 from app.db.database import get_db
-from app.api.product_schema_mongo import ProductOut  # Import ProductOut for response model
-from app.api.products_services import get_favorite_products_for_user
+from app.api.schemas.product_schema_mongo import ProductOut  # Import ProductOut for response model
+from app.api.services.products_services import get_favorite_products_for_user
 router = APIRouter(
     prefix="/order-app/api/v1/favorites",
     tags=["favorites"],

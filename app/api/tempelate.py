@@ -1,6 +1,6 @@
 # HTML Email Template
 
-from app.api.order_schemas import OrderCreate
+from app.api.schemas.order_schemas import OrderCreate
 
 def generate_order_email_html(order_data: OrderCreate) -> str:
     return f"""

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from app.db.models import Review
-from app.api.review_schemas import ReviewCreate, ReviewOut
+from app.api.schemas.review_schemas import ReviewCreate, ReviewOut
 from typing import Optional
 
 

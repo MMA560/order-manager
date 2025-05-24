@@ -14,11 +14,11 @@ from typing import List
 
 from app.api.tempelate import generate_order_email_html, format_datetime_arabic
 
-from app.api.order_schemas import *
+from app.api.schemas.order_schemas import *
 
 from app.db.database import get_db
 
-from app.api.order_services import *
+from app.api.services.order_services import *
 
 from app.db.models import Order  # Import the Order model
 
@@ -84,13 +84,7 @@ def create_order_endpoint(order_data: OrderCreate, to_email: str, db: Session = 
         raise HTTPException(status_code=500, detail=f"تم حفظ الطلب ولكن فشل إرسال الإيميل: {str(e)}")
 
 
-    return {
-
-        "message": "تم إنشاء الطلب وإرسال الإيميل بنجاح",
-
-            "content":order
-
-            }
+    return order
 
 
 @router.get("/{order_id}", status_code=status.HTTP_200_OK, response_model=OrderOut)

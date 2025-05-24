@@ -1,8 +1,8 @@
 from app.db.firestore_db_async import get_products_collection
-from app.api.product_schema_mongo import *
+from app.api.schemas.product_schema_mongo import *
 from google.cloud.firestore import FieldFilter
 from typing import List, Optional
-from app.api.favorite_services import get_user_favorites
+from app.api.services.favorite_services import get_user_favorites
 from sqlalchemy.orm import Session
 
 async def get_all_products() -> List[ProductOut]:

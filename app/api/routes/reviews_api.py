@@ -5,13 +5,13 @@ from sqlalchemy.orm import Session
 from typing import List
 
 
-from app.api.review_schemas import ReviewCreate, ReviewOut
+from app.api.schemas.review_schemas import ReviewCreate, ReviewOut
 
 from app.db.database import get_db
 
 from app.db.models import Review
 
-from app.api.review_services import create_new_review, get_reviews_by_product_id
+from app.api.services.review_services import create_new_review, get_reviews_by_product_id
 
 
 router = APIRouter(

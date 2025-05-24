@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, status
 from typing import List
 
-from app.api.product_schema_mongo import Product, ProductOut
-from app.api.products_services import get_all_products, get_product_by_id, add_product, update_product, delete_product
+from app.api.schemas.product_schema_mongo import Product, ProductOut
+from app.api.services.products_services import get_all_products, get_product_by_id, add_product, update_product, delete_product
 
 router = APIRouter(
     prefix="/order-app/api/v1/products",

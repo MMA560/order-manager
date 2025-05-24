@@ -6,7 +6,7 @@ import logging
 
 from app.db.database import get_db
 from app.db.models import ProductInventory
-from app.api.poroduct_inventory_schema import ProductInventoryCreate, ProductInventoryOut, ProductInventoryUpdate
+from app.api.schemas.poroduct_inventory_schema import ProductInventoryCreate, ProductInventoryOut, ProductInventoryUpdate
 
 router = APIRouter(
     prefix="/order-app/api/v1/inventory",

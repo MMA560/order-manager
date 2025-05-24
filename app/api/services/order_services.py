@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from app.db.models import Order
-from app.api.order_schemas import OrderCreate, OrderUpdate
+from app.api.schemas.order_schemas import OrderCreate, OrderUpdate
 from typing import List, Optional
 from datetime import datetime
 from sqlalchemy import desc
