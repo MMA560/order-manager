@@ -9,8 +9,8 @@ class OrderBase(BaseModel):
     phone: str
     second_phone: Optional[str] = None
     address: str
-    state: str
-    city: str
+    state: Optional[str] = None
+    city: Optional[str] = None
     notes: Optional[str] = None
     product: str
     quantity : int = 1
